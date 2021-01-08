@@ -9,6 +9,7 @@ from PyQt5.QtGui import QFont, QIcon, QPixmap, QPainter, QColor, QPen
 from PyQt5.QtCore import Qt
 import random
 import time
+from server import *
 
 class ListRobots(QWidget):
     def __init__(self):
@@ -85,11 +86,12 @@ class Application(QWidget):
         self.initUI()
 
     def updateRow(self, index, data):
-        sysinfo = data[0]
+        ds = data.split(',')
+        sysinfo = ds[0]
         self.lr.setText(1, index, sysinfo)
-        capacity = data[1]
+        capacity = int(ds[1])
         self.lr.setValue(2, index, capacity)
-        voltage = ('0' if data[2]<10 else '') + str(data[2]) + ' В'
+        voltage = ('0' if int(ds[2])<10 else '') + ds[2] + ' В'
         self.lr.setText(3, index, voltage)
 
     def initUI(self):
@@ -135,17 +137,56 @@ class Application(QWidget):
     #         print(data.decode('utf-8'))
 
 if __name__ == '__main__':
+    # плейсхолдер списка ip
+    clients = ['192.168.7.1',
+               '192.168.7.2',
+               '192.168.7.3',
+               '192.168.7.4',
+               '192.168.7.5',
+               '192.168.7.6',
+               '192.168.7.7',
+               '192.168.7.8',
+               '192.168.7.9',
+               '192.168.7.10',
+               '192.168.7.11',
+               '192.168.7.12',
+               '192.168.7.13',
+               '192.168.7.14',
+               '192.168.7.15',
+               '192.168.7.16',
+               '192.168.7.17',
+               '192.168.7.18',
+               '192.168.7.19',
+               '192.168.7.20',
+               '192.168.7.21',
+               '192.168.7.22',
+               '192.168.7.23',
+               '192.168.7.24',
+               '192.168.7.25',
+               '192.168.7.26',
+               '192.168.7.27',
+               '192.168.7.28',
+               '192.168.7.29',
+               '192.168.7.30']
+    # инициализация сервера
+    srvr = server()
+
     app = QApplication(sys.argv)
     ex = Application()
 
+    ###
     # ToDo: вынести обновление в функцию по таймеру
+    # ToDo: получать данные с сервера
+    # data, address = srvr.recieve()
+    # index = clients.index(address)
+    # ex.updateRow(index+1, data)
+    ###
+
+    # плейсхолдер данных с робота
     for i in range(30):
-        # плейсхолдер данных с робота
-        # ToDo: получать данные с сервера
         capacity = random.randint(0, 100)
         voltage = 9 + (capacity * 3)//100
-        data = ['Ubuntu 18.04 LTS' if random.randint(0,1)==0 else 'Windows 10 Pro', capacity, voltage]
-
+        data = ('Ubuntu 18.04 LTS' if random.randint(0,1)==0 else 'Windows 10 Pro') + ',' + str(capacity) + ',' + str(voltage)
         ex.updateRow(i+1, data)
 
     sys.exit(app.exec_())
