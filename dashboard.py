@@ -15,20 +15,22 @@ from server import *
 class Map(QWidget):
     def __init__(self):
         super().__init__()
-        countX = 100
-        countY = 100
+        countX = 70
+        countY = 70
         sizeX = 500
         sizeY = 500
-        #self.setFixedWidth(sizeX)
-        #self.setFixedHeight(sizeY)
+        self.setFixedWidth(sizeX)
+        self.setFixedHeight(sizeY)
         grd = QGridLayout()
-        # square = QFrame()
-        # square.setFixedSize(sizeX/countX, sizeY/countY)
-        # col = QColor(255, 0, 0)
-        # square.setStyleSheet("QWidget { background-color: %s }" % col.name())
+        square = []
         for i in range(0, countX):
+            square.append([])
             for j in range(0, countY):
-                grd.addWidget(QPushButton("хуй"), i, j)
+                square[i].append(QFrame())
+                square[i][j].setFixedSize(sizeX/countX, sizeY/countY)
+                col = QColor(255*i/countX, 255*j/countY, 0)
+                square[i][j].setStyleSheet("QWidget { background-color: %s }" % col.name())
+                grd.addWidget(square[i][j], i, j)
         self.setLayout(grd)
         
         # 30 QLabel с квадратиком

@@ -5,7 +5,7 @@ class server:
     def __init__(self, number):
         # ipv4, датаграммный сокет
         self.sock = socket.socket()
-        self.sock.bind(('192.168.1.68', 9090))
+        self.sock.bind(('25.94.21.147', 9090))
         self.sock.listen(number)
         self.conn = []
         self.addr = []
