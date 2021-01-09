@@ -1,16 +1,24 @@
 import socket
 
-class server:
-    def __init__(self):
-        # ipv4, датаграммный сокет
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('127.0.0.1', 4141))
 
-    def receive(self):
+class server:
+    def __init__(self, number):
+        # ipv4, датаграммный сокет
+        self.sock = socket.socket()
+        self.sock.bind(('192.168.1.68', 9090))
+        self.sock.listen(number)
+        self.conn = []
+        self.addr = []
+        for i in range(number):
+            c, a = self.sock.accept()
+            self.conn.append(c)
+            self.addr.append(a)
+
+    def receive(self, index):
         # формат данных: sysinfo, charge, voltage, x, y
-        data, address = self.sock.recvfrom(1024)
+        data = self.conn[index].recv(1024)
+        address = self.addr[index]
         return data, address
 
-    def send(self, data, address):
-        self.sock.sendto(data, address)
-
+    def send(self, data, index):
+        self.conn[index].send(data)

@@ -11,6 +11,7 @@ import random
 import time
 from server import *
 
+
 class ListRobots(QWidget):
     def __init__(self):
         super().__init__()
@@ -22,7 +23,7 @@ class ListRobots(QWidget):
         self.setLayout(vbox)
 
     # генерация списка строк
-    def genList(self,amount):
+    def genList(self, amount):
         hbox = []
         for i in range(amount):
             hbox.append(self.genStrRbt(i))
@@ -31,7 +32,7 @@ class ListRobots(QWidget):
     # интерфейс строки списка ботов
     def genStrRbt(self, i):
         hbox = QHBoxLayout()
- 
+
         id = QLabel(('0' if (i + 1 < 10) else '') + str(i + 1))
         id.setFixedWidth(20)
         id.move(0, 0)
@@ -48,16 +49,16 @@ class ListRobots(QWidget):
 
         permissionMotion = QPushButton('Разрешить движение')
         permissionMotion.setFixedWidth(120)
-       
+
         STOP = QPushButton('Аварийная остановка')
         STOP.setFixedWidth(120)
-       
-        hbox.addWidget(id)                  #1
-        hbox.addWidget(osInf)               #2
-        hbox.addWidget(power)               #3
-        hbox.addWidget(U)                   #4
-        hbox.addWidget(permissionMotion)    #5
-        hbox.addWidget(STOP)                #6
+
+        hbox.addWidget(id)                  # 0
+        hbox.addWidget(osInf)               # 1
+        hbox.addWidget(power)               # 2
+        hbox.addWidget(U)                   # 3
+        hbox.addWidget(permissionMotion)    # 4
+        hbox.addWidget(STOP)                # 5
 
         return hbox
 
@@ -80,18 +81,15 @@ class ListRobots(QWidget):
 class Application(QWidget):
     def __init__(self):
         super().__init__()
-        
-        # potok = threading.Thread(target=self.read_sok)
-        # potok.start()
         self.initUI()
 
     def updateRow(self, index, data):
-        ds = data.split(',')
+        ds = data.split(', ')
         sysinfo = ds[0]
         self.lr.setText(1, index, sysinfo)
         capacity = int(ds[1])
         self.lr.setValue(2, index, capacity)
-        voltage = ('0' if int(ds[2])<10 else '') + ds[2] + ' В'
+        voltage = ('0' if int(ds[2]) < 10 else '') + ds[2] + ' В'
         self.lr.setText(3, index, voltage)
 
     def initUI(self):
@@ -102,16 +100,16 @@ class Application(QWidget):
 
         self.lr = ListRobots()
 
-        scroll = QScrollArea()  
+        scroll = QScrollArea()
         scroll.setWidget(self.lr)
         scroll.setFixedWidth(550)
         scroll.move(0, 0)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        #qp = QPainter()
-        #qp.setPen(Qt.red)
-        #for i in range(30):
+        # qp = QPainter()
+        # qp.setPen(Qt.red)
+        # for i in range(30):
         #    x = random.randint(1, 500-1)
         #    y = random.randint(1, 500-1)
         #    qp.drawPoint(x, y)
@@ -131,13 +129,23 @@ class Application(QWidget):
         self.setMinimumWidth(1400)
         self.setMinimumHeight(910)
 
-    # def read_sok(self):
-    #     while 1 :
-    #         data = sor.recv(1024)
-    #         print(data.decode('utf-8'))
+
+def sender():
+    while(1):
+        for i in range(numofclients):
+            s = 'запрос'
+            srvr.send(s.encode(), i)
+            data, address = srvr.receive(i)
+            s = data.decode()
+            ex.updateRow(i+1, s)
+            #print('получено ' + s + ' от ' + address[0] + ':' + str(address[1]))
+        time.sleep(1)
+
 
 if __name__ == '__main__':
     # плейсхолдер списка ip
+    # а нужен ли нам статический список?
+    '''
     clients = ['192.168.7.1',
                '192.168.7.2',
                '192.168.7.3',
@@ -168,27 +176,24 @@ if __name__ == '__main__':
                '192.168.7.28',
                '192.168.7.29',
                '192.168.7.30']
+               '''
+               
     # инициализация сервера
-    srvr = server()
+    numofclients = 1
+    srvr = server(numofclients)
 
     app = QApplication(sys.argv)
     ex = Application()
-
-    ###
-    # ToDo: вынести обновление в функцию по таймеру
-    # ToDo: получать данные с сервера
-    # data, address = srvr.recieve()
-    # index = clients.index(address)
-    # ex.updateRow(index+1, data)
-    ###
 
     # плейсхолдер данных с робота
     for i in range(30):
         capacity = random.randint(0, 100)
         voltage = 9 + (capacity * 3)//100
-        data = ('Ubuntu 18.04 LTS' if random.randint(0,1)==0 else 'Windows 10 Pro') + ',' + str(capacity) + ',' + str(voltage)
+        sysinfo = 'Ubuntu 18.04 LTS' if random.randint(0, 1) == 0 else 'Windows 10 Pro'
+        data = sysinfo + ', ' + str(capacity) + ', ' + str(voltage)
         ex.updateRow(i+1, data)
 
-    sys.exit(app.exec_())
+    sendingthread = threading.Thread(target=sender, daemon=True)
+    sendingthread.start()
 
-    
+    sys.exit(app.exec_())
