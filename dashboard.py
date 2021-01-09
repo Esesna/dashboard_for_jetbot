@@ -12,12 +12,33 @@ import time
 from server import *
 
 
+class Map(QWidget):
+    def __init__(self):
+        super().__init__()
+        countX = 100
+        countY = 100
+        sizeX = 500
+        sizeY = 500
+        #self.setFixedWidth(sizeX)
+        #self.setFixedHeight(sizeY)
+        grd = QGridLayout()
+        # square = QFrame()
+        # square.setFixedSize(sizeX/countX, sizeY/countY)
+        # col = QColor(255, 0, 0)
+        # square.setStyleSheet("QWidget { background-color: %s }" % col.name())
+        for i in range(0, countX):
+            for j in range(0, countY):
+                grd.addWidget(QPushButton("хуй"), i, j)
+        self.setLayout(grd)
+        
+        # 30 QLabel с квадратиком
+
+
 class ListRobots(QWidget):
     def __init__(self):
         super().__init__()
         hbox = self.genList(30)
         vbox = QVBoxLayout()
-        vbox.addStretch(1)
         for tmp in hbox:
             vbox.addLayout(tmp)
         self.setLayout(vbox)
@@ -35,30 +56,27 @@ class ListRobots(QWidget):
 
         id = QLabel(('0' if (i + 1 < 10) else '') + str(i + 1))
         id.setFixedWidth(20)
-        id.move(0, 0)
 
         osInf = QLabel("")
         osInf.setFixedWidth(100)
-        osInf.move(id.width() + 10, 0)
 
         power = QProgressBar()
         power.setFixedWidth(100)
-        power.move(id.width() + osInf.width() + 20, 0)
 
         U = QLabel(str(20))
 
-        permissionMotion = QPushButton('Разрешить движение')
-        permissionMotion.setFixedWidth(120)
+        motionPermissionButton = QPushButton('Разрешить движение')
+        motionPermissionButton.setFixedWidth(120)
 
-        STOP = QPushButton('Аварийная остановка')
-        STOP.setFixedWidth(120)
+        emergencyStopButton = QPushButton('Аварийная остановка')
+        emergencyStopButton.setFixedWidth(120)
 
-        hbox.addWidget(id)                  # 0
-        hbox.addWidget(osInf)               # 1
-        hbox.addWidget(power)               # 2
-        hbox.addWidget(U)                   # 3
-        hbox.addWidget(permissionMotion)    # 4
-        hbox.addWidget(STOP)                # 5
+        hbox.addWidget(id)                         # 0
+        hbox.addWidget(osInf)                      # 1
+        hbox.addWidget(power)                      # 2
+        hbox.addWidget(U)                          # 3
+        hbox.addWidget(motionPermissionButton)     # 4
+        hbox.addWidget(emergencyStopButton)        # 5
 
         return hbox
 
@@ -73,10 +91,7 @@ class ListRobots(QWidget):
         rowLayout = myLayout.itemAt(row).layout()
         myWidget = rowLayout.itemAt(column).widget()
         myWidget.setValue(value)
-
-    # def buttonClicked(self):
-    #     sender = self.sender()
-    #     Message = QMessageBox.question(self, 'Message',"Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        
 
 class Application(QWidget):
     def __init__(self):
@@ -88,9 +103,8 @@ class Application(QWidget):
         self._timer.start(1000)
 
     def update_rows(self):
-        for i in range(30):
-            data = datatable[i]
-            index = i + 1
+        for index in range(30):
+            data = datatable[index]
             sysinfo = data[0]
             self.lr.setText(1, index, sysinfo)
             charge = data[1]
@@ -113,27 +127,29 @@ class Application(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # qp = QPainter()
-        # qp.setPen(Qt.red)
-        # for i in range(30):
-        #    x = random.randint(1, 500-1)
-        #    y = random.randint(1, 500-1)
-        #    qp.drawPoint(x, y)
-
         # плейсхолдер миникарты
         picture = QLabel(self)
         pixmap = QPixmap('icon.png')
         picture.setPixmap(pixmap)
+        Label = QLabel("Какашка")
+        
+        #test
+        mp = Map()
+        square = QFrame()
+        square.setFixedSize(500, 500)
+        self.col = QColor(255, 0, 0)
+        square.setStyleSheet("QWidget { background-color: %s }" % self.col.name())
 
         # настройка расположения элементов
         hbox = QHBoxLayout()
         hbox.addWidget(scroll)
-        hbox.addWidget(picture)
+        hbox.addWidget(mp)
+        # hbox.addWidget(picture)
         self.setLayout(hbox)
 
         # настройка размеров окна
-        self.setMinimumWidth(1400)
-        self.setMinimumHeight(910)
+        self.setMinimumWidth(1100)
+        self.setMinimumHeight(550)
 
 
 def sender():
@@ -141,10 +157,11 @@ def sender():
 
     while(1):
         for i in range(numofclients):
-            s = 'запрос'
+            s = 'дай манки'
             srvr.send(s.encode(), i)
             data, address = srvr.receive(i)
             s = data.decode()
+            print('получено: ' + s)
             t = s.split(', ')
             sysinfo = t[0]
             charge = int(t[1])
