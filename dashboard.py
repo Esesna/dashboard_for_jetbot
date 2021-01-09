@@ -4,9 +4,9 @@
 import sys
 import socket
 import threading
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QApplication,  QScrollArea, QMessageBox, QLabel, QProgressBar)
-from PyQt5.QtGui import QFont, QIcon, QPixmap, QPainter, QColor, QPen
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import random
 import time
 from server import *
@@ -83,14 +83,21 @@ class Application(QWidget):
         super().__init__()
         self.initUI()
 
+        self._timer = QTimer()
+        self._timer.timeout.connect(self.update_rows)
+        self._timer.start(1000)
+
     def updateRow(self, index, data):
-        ds = data.split(', ')
-        sysinfo = ds[0]
+        sysinfo = data[0]
         self.lr.setText(1, index, sysinfo)
-        capacity = int(ds[1])
-        self.lr.setValue(2, index, capacity)
-        voltage = ('0' if int(ds[2]) < 10 else '') + ds[2] + ' В'
+        charge = data[1]
+        self.lr.setValue(2, index, charge)
+        voltage = ('0' if data[2] < 10 else '') + str(data[2]) + ' В'
         self.lr.setText(3, index, voltage)
+
+    def update_rows(self):
+        for i in range(30):
+            self.updateRow(i+1, datatable[i])
 
     def initUI(self):
         self.setGeometry(100, 100, 300, 220)
@@ -131,69 +138,54 @@ class Application(QWidget):
 
 
 def sender():
+    srvr = server(numofclients)
+
     while(1):
         for i in range(numofclients):
             s = 'запрос'
             srvr.send(s.encode(), i)
             data, address = srvr.receive(i)
             s = data.decode()
-            ex.updateRow(i+1, s)
-            #print('получено ' + s + ' от ' + address[0] + ':' + str(address[1]))
+            t = s.split(', ')
+            sysinfo = t[0]
+            charge = int(t[1])
+            voltage = int(t[2])
+            x = int(t[3])
+            y = int(t[4])
+            datatable[i] = [sysinfo, charge, voltage, x, y]
         time.sleep(1)
 
 
 if __name__ == '__main__':
-    # плейсхолдер списка ip
-    # а нужен ли нам статический список?
-    '''
-    clients = ['192.168.7.1',
-               '192.168.7.2',
-               '192.168.7.3',
-               '192.168.7.4',
-               '192.168.7.5',
-               '192.168.7.6',
-               '192.168.7.7',
-               '192.168.7.8',
-               '192.168.7.9',
-               '192.168.7.10',
-               '192.168.7.11',
-               '192.168.7.12',
-               '192.168.7.13',
-               '192.168.7.14',
-               '192.168.7.15',
-               '192.168.7.16',
-               '192.168.7.17',
-               '192.168.7.18',
-               '192.168.7.19',
-               '192.168.7.20',
-               '192.168.7.21',
-               '192.168.7.22',
-               '192.168.7.23',
-               '192.168.7.24',
-               '192.168.7.25',
-               '192.168.7.26',
-               '192.168.7.27',
-               '192.168.7.28',
-               '192.168.7.29',
-               '192.168.7.30']
-               '''
-               
-    # инициализация сервера
+    datatable = []
+    # плейсхолдер данных с робота
+    for i in range(30):
+        charge = random.randint(0, 100)
+        voltage = 9 + (charge * 3)//100
+        sysinfo = 'Ubuntu 18.04 LTS' if random.randint(0, 1) == 0 else 'Windows 10 Pro'
+        x = 0
+        y = 0
+        datatable.append([sysinfo, charge, voltage, x, y])
+
     numofclients = 1
-    srvr = server(numofclients)
+    sendingthread = threading.Thread(target=sender, daemon=True)
+    sendingthread.start()
 
     app = QApplication(sys.argv)
     ex = Application()
+    ex.show()
+    '''
+    while(1):
+        for i in range(30):
+            sysinfo = datatable[i][0]
+            charge = datatable[i][1]
+            voltage = datatable[i][2]
+            x = datatable[i][3]
+            y = datatable[i][4]
 
-    # плейсхолдер данных с робота
-    for i in range(30):
-        capacity = random.randint(0, 100)
-        voltage = 9 + (capacity * 3)//100
-        sysinfo = 'Ubuntu 18.04 LTS' if random.randint(0, 1) == 0 else 'Windows 10 Pro'
-        data = sysinfo + ', ' + str(capacity) + ', ' + str(voltage)
-        ex.updateRow(i+1, data)
-
-    sendingthread = threading.Thread(target=sender, daemon=True)
-    sendingthread.start()
+            data = sysinfo + ', ' + str(charge) + ', ' + str(voltage)
+            ex.updateRow(i+1, data)
+        time.sleep(0.1)
+        '''
 
     sys.exit(app.exec_())

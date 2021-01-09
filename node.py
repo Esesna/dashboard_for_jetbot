@@ -13,5 +13,7 @@ while 1:
 
     charge = random.randint(0, 100)
     voltage = 9 + (charge * 3) // 100
-    s = 'Ubuntu 18.04 LTS, ' + str(charge) + ', ' + str(voltage) + ', 2, 3'
+    x = 0
+    y = 0
+    s = 'Ubuntu 18.04 LTS, ' + str(charge) + ', ' + str(voltage) + ', ' + str(x) + ', ' + str(y) 
     sock.send(s.encode())
