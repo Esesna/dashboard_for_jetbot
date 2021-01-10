@@ -169,14 +169,8 @@ class Application(QWidget):
         scroll.move(0, 0)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        # плейсхолдер миникарты
-        picture = QLabel(self)
-        pixmap = QPixmap('icon.png')
-        picture.setPixmap(pixmap)
-        Label = QLabel("Какашка")
         
-        #test
+        # миникарта
         self.mp = Map()
         square = QFrame()
         square.setFixedSize(500, 500)
@@ -195,23 +189,43 @@ class Application(QWidget):
         self.setMinimumHeight(550)
 
 
+def connect(i):
+    serverIP = (addr[i], 9090)
+    
+    while 1:
+        time.sleep(1)
+        sock = socket.socket()
+
+        try:
+            sock.connect(serverIP)
+            connections[i] = sock
+            break
+
+        except TimeoutError as e:
+            print(serverIP[0] + ': ' + e.strerror)
+            continue
+
+        except OSError as e:
+            #print(serverIP[0] + ': ' + e.strerror)
+            continue
+        
+
 def sender():
-    srvr = server()
-    request = 'дай манки'
+    request = 'hello'
 
     while(1):
         for i in range(30):
             # если робот подключен
-            if not (srvr.conn[i] == None):
+            if not (connections[i] == None):
                 try:
                     # отправляем запрос
-                    srvr.send(request.encode(), i)
+                    connections[i].send(request.encode())
 
                     # получаем ответ
-                    data, address = srvr.receive(i)
+                    data = connections[i].recv(1024)
                     s = data.decode()
 
-                    print('получено: ' + s)
+                    print(addr[i] + ': ' + s)
 
                     # парсим полученную строку
                     t = s.split(', ')
@@ -224,15 +238,53 @@ def sender():
                     # сохраняем данные
                     datatable[i] = [sysinfo, charge, voltage, x, y]
                 except ConnectionResetError as e:
-                    print(e)
-                    srvr.conn[i] = None
+                    print(addr[i] + ': ' + e.strerror)
+                    
+                    # сбрасываем данные
+                    connections[i].close()
+                    connections[i] = None
                     datatable[i] = ['Not connected', 0, 0, -1, -1]
+
+                    # пытаемся переподключиться
+                    threading.Thread(target=connect, args=(i,), daemon=True).start()
                     continue
         time.sleep(1)
 
 if __name__ == '__main__':
     datatable = []
-    # плейсхолдер данных с робота
+    connections = []
+
+    addr = ['0.0.0.1',
+            '0.0.0.2',
+            '0.0.0.3',
+            '0.0.0.4',
+            '0.0.0.5',
+            '0.0.0.6',
+            '192.168.1.72',
+            '0.0.0.8',
+            '0.0.0.9',
+            '0.0.0.10',
+            '0.0.0.11',
+            '0.0.0.12',
+            '0.0.0.13',
+            '0.0.0.14',
+            '0.0.0.15',
+            '0.0.0.16',
+            '0.0.0.17',
+            '0.0.0.18',
+            '0.0.0.19',
+            '0.0.0.20',
+            '0.0.0.21',
+            '0.0.0.22',
+            '0.0.0.23',
+            '0.0.0.24',
+            '0.0.0.25',
+            '0.0.0.26',
+            '0.0.0.27',
+            '0.0.0.28',
+            '0.0.0.29',
+            '0.0.0.30']
+
     for i in range(30):
         charge = 0
         voltage = 0
@@ -240,6 +292,10 @@ if __name__ == '__main__':
         x = -1
         y = -1
         datatable.append([sysinfo, charge, voltage, x, y])
+        connections.append(None)
+
+        connectingthread = threading.Thread(target=connect, args=(i,), daemon=True)
+        connectingthread.start()
 
     sendingthread = threading.Thread(target=sender, daemon=True)
     sendingthread.start()
