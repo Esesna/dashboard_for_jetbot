@@ -19,7 +19,7 @@ def respond(conn, addr):
                 y = random.randint(0, 49)
                 response = 'Ubuntu 18.04 LTS, ' + str(charge) + ', ' + str(voltage) + ', ' + str(x) + ', ' + str(y)
 
-                sock.send(response.encode())
+                conn.send(response.encode())
                 print('ответ: ' + response)
 
         except ConnectionResetError as e:
@@ -27,7 +27,7 @@ def respond(conn, addr):
             conn.close()
             break
         
-def connect(self):
+def connect():
     while 1:
         # ждем подключения
         sock.listen(1)
@@ -43,9 +43,9 @@ if __name__ == '__main__':
     connections = []
 
     sock = socket.socket()
-    sock.bind(('192.168.1.68'), 9090)
+    sock.bind(('192.168.1.72', 9090))
 
-    connector = threading.Thread(target=self.connect, daemon=True)
+    connector = threading.Thread(target=connect, daemon=True)
     connector.start()
 
 
