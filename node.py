@@ -47,6 +47,7 @@ if __name__ == '__main__':
 
     connector = threading.Thread(target=connect, daemon=True)
     connector.start()
+    connector.join()
 
 
     

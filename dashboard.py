@@ -9,7 +9,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import random
 import time
-from server import *
 
 class Map(QWidget):
     #Генерируем карту
@@ -53,7 +52,7 @@ class Map(QWidget):
         
         self.setLayout(self.grd)
 
-    def update_square(self, x, y, col, tooltip):
+    def updateSquare(self, x, y, col, tooltip):
         point = self.grd.itemAt(x + self.countX * y).widget()
         point.setToolTip(tooltip)
         point.setStyleSheet("QWidget { background-color: %s }" % col.name())
@@ -63,11 +62,11 @@ class Map(QWidget):
         if not (self.rbt[index].x == x and self.rbt[index].y == y):
             
             if not (self.rbt[index].x == -1) and not (self.rbt[index].y == -1):
-                self.update_square(self.rbt[index].x, self.rbt[index].y, self.colSpace, "")
+                self.updateSquare(self.rbt[index].x, self.rbt[index].y, self.colSpace, "")
 
             if not (x == -1) and not (y == -1):
                 tooltip = "id = " + str(index+1) + "\nx = " + str(x) + "\ny = " + str(y)
-                self.update_square(x, y, self.colOneRobot, tooltip)
+                self.updateSquare(x, y, self.colOneRobot, tooltip)
 
             self.rbt[index].x = x
             self.rbt[index].y = y
@@ -105,10 +104,14 @@ class ListRobots(QWidget):
         U = QLabel(str(20))
 
         motionPermissionButton = QPushButton('Разрешить движение')
+        motionPermissionButton.clicked.connect(self.motionPermissionClick)
         motionPermissionButton.setFixedWidth(120)
+        motionPermissionButton.index = i
 
         emergencyStopButton = QPushButton('Аварийная остановка')
+        emergencyStopButton.clicked.connect(self.emergencyStopClick)
         emergencyStopButton.setFixedWidth(120)
+        emergencyStopButton.index = i
 
         hbox.addWidget(id)                         # 0
         hbox.addWidget(osInf)                      # 1
@@ -119,6 +122,21 @@ class ListRobots(QWidget):
 
         return hbox
 
+    def motionPermissionClick(self):
+        sender = self.sender()
+        print(sender.index)
+        if sender.text() == "Разрешить движение":
+            sender.setText("Запретить движение")
+            statetable[sender.index][0] = "Льзя"
+        else:
+            sender.setText("Разрешить движение")
+            statetable[sender.index][0] = "Незя"
+        
+        # print(sender.parent().layout().itemAt(1).widget().text())
+    def emergencyStopClick(self):
+        sender = self.sender()
+        statetable[sender.index][1] = 0
+        
     def setText(self, column, row, text):
         myLayout = self.layout()
         rowLayout = myLayout.itemAt(row).layout()
@@ -154,6 +172,11 @@ class Application(QWidget):
 
             x, y = data[3], data[4]
             self.mp.setCrdRobot(index, x, y)
+
+            if data[5]=="Льзя":
+                self.lr.setText(4, index, "Запретить движение")
+            else:
+                self.lr.setText(4, index, "Разрешить движение")
 
     def initUI(self):
         self.setGeometry(100, 100, 300, 220)
@@ -210,7 +233,7 @@ def connect(i):
             continue
         
 
-def sender():
+def requestData():
     request = 'hello'
 
     while(1):
@@ -218,8 +241,12 @@ def sender():
             # если робот подключен
             if not (connections[i] == None):
                 try:
-                    # отправляем запрос
+                    # отправляем команды
                     connections[i].send(request.encode())
+
+                    data = statetable[i][0] + ', ' + str(statetable[i][1])
+                    statetable[i][1] = 1
+                    connections[i].send(data.encode())
 
                     # получаем ответ
                     data = connections[i].recv(1024)
@@ -229,21 +256,22 @@ def sender():
 
                     # парсим полученную строку
                     t = s.split(', ')
-                    sysinfo = t[0]
-                    charge = int(t[1])
-                    voltage = int(t[2])
-                    x = int(t[3])
-                    y = int(t[4])
+                    sysinfo =   t[0]
+                    charge =    int(t[1])
+                    voltage =   int(t[2])
+                    x =         int(t[3])
+                    y =         int(t[4])
+                    mPermis =   t[5]
 
                     # сохраняем данные
-                    datatable[i] = [sysinfo, charge, voltage, x, y]
+                    datatable[i] = [sysinfo, charge, voltage, x, y, mPermis]
                 except ConnectionResetError as e:
                     print(addr[i] + ': ' + e.strerror)
                     
                     # сбрасываем данные
                     connections[i].close()
                     connections[i] = None
-                    datatable[i] = ['Not connected', 0, 0, -1, -1]
+                    statetable[i] = ['Not connected', 0, 0, -1, -1]
 
                     # пытаемся переподключиться
                     threading.Thread(target=connect, args=(i,), daemon=True).start()
@@ -251,8 +279,9 @@ def sender():
         time.sleep(1)
 
 if __name__ == '__main__':
-    datatable = []
-    connections = []
+    datatable =     []
+    connections =   []
+    statetable =    []
 
     addr = ['0.0.0.1',
             '0.0.0.2',
@@ -260,7 +289,7 @@ if __name__ == '__main__':
             '0.0.0.4',
             '0.0.0.5',
             '0.0.0.6',
-            '192.168.1.72',
+            '192.168.43.4',
             '0.0.0.8',
             '0.0.0.9',
             '0.0.0.10',
@@ -291,13 +320,14 @@ if __name__ == '__main__':
         sysinfo = 'Not connected'
         x = -1
         y = -1
-        datatable.append([sysinfo, charge, voltage, x, y])
+        mPermis = "Льзя"
+        datatable.append([sysinfo, charge, voltage, x, y, mPermis])
         connections.append(None)
-
+        statetable.append(["Разрешить движение",1])
         connectingthread = threading.Thread(target=connect, args=(i,), daemon=True)
         connectingthread.start()
 
-    sendingthread = threading.Thread(target=sender, daemon=True)
+    sendingthread = threading.Thread(target=requestData, daemon=True)
     sendingthread.start()
 
     app = QApplication(sys.argv)
