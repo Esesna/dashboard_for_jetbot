@@ -9,7 +9,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import random
 import time
-from server import *
 
 class Map(QWidget):
     #Генерируем карту
@@ -254,7 +253,7 @@ if __name__ == '__main__':
     datatable = []
     connections = []
 
-    addr = ['0.0.0.1',
+    addr = ['25.94.21.147',
             '0.0.0.2',
             '0.0.0.3',
             '0.0.0.4',
