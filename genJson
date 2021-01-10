@@ -1,6 +1,0 @@
-import json
-
-with open('listaddress.json', 'r', encoding='utf-8') as f: #открыли файл с данными
-    data = json.load(f)
-    for text in data["Bot"]:
-        print("id = " + str(text['id']) + "address = " + str(text['address']))

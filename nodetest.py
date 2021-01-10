@@ -25,8 +25,8 @@ def respond(conn, addr):
 
                 charge = random.randint(0, 100)
                 voltage = 9 + (charge * 3) // 100
-                x = random.randint(0, 49)
-                y = random.randint(0, 49)
+                x = random.randint(0, 99)
+                y = random.randint(0, 99)
                 response = 'Ubuntu 18.04 LTS, ' + str(charge) + ', ' + str(voltage) + ', ' + str(x) + ', ' + str(y) + ', ' + str(state[0])
 
                 conn.send(response.encode())

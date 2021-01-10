@@ -19,7 +19,7 @@ class Map(QWidget):
             #self.id = id
             self.x = x
             self.y = y
-        
+    
     def __init__(self):
         self.colSpace =      QColor(220, 220, 220)
         self.colOneRobot =   QColor(167, 200, 100)
@@ -30,7 +30,7 @@ class Map(QWidget):
         #Генерация карты с установленным разрешением countX x countY, больше 50 не советую ставить
         self.countX = 50
         self.countY = 50
-
+        self.mapSizeX,self.mapSizeY = self.readMapSize()
         sizeX = 500
         sizeY = 500
         self.setFixedWidth(sizeX)
@@ -54,8 +54,15 @@ class Map(QWidget):
         
         self.setLayout(self.grd)
 
+    def readMapSize(self):
+        with open('tableinf.json', 'r', encoding='utf-8') as f: #открыли файл с данными
+            data = json.load(f)
+            data = data["Table"]
+            # print("x = " + str(data['x']) + "y = " + str(data['y']))
+            return data['x'], data['y']
+
     def updateSquare(self, x, y, col, tooltip):
-        point = self.grd.itemAt(x + self.countX * y).widget()
+        point = self.grd.itemAt(int(x * self.countX / self.mapSizeX) + self.countX * int(y * self.countY / self.mapSizeY)).widget()
         point.setToolTip(tooltip)
         point.setStyleSheet("QWidget { background-color: %s }" % col.name())
 
