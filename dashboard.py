@@ -178,8 +178,8 @@ class Application(QWidget):
 
             sysinfo = data[0]
             self.lr.setText(1, index, sysinfo)
-            charge = data[1]
-            self.lr.setValue(2, index, charge)
+            capacity = data[1]
+            self.lr.setValue(2, index, capacity)
             voltage = ('0' if data[2] < 10 else '') + ("%.2f" % data[2]) + ' В'
             self.lr.setText(3, index, voltage)
 
@@ -285,13 +285,13 @@ def requestData():
                     t = s.split(', ')
                     if len(t) == 5: 
                         sysinfo =   t[0]
-                        charge =    int(t[1])
+                        capacity =    int(t[1])
                         voltage =   float(t[2])
                         x =         float(t[3])
                         y =         float(t[4])
 
                         # сохраняем данные
-                        datatable[i] = [sysinfo, charge, voltage, x, y, datatable[i][5]]
+                        datatable[i] = [sysinfo, capacity, voltage, x, y, datatable[i][5]]
 
                 except Exception as e:
                     print(addr[i] + ': ' + e.strerror)
@@ -311,13 +311,13 @@ if __name__ == '__main__':
             addr.append(text['address'])
 
     for i in range(30):
-        charge =    0
+        capacity =  0
         voltage =   0
         sysinfo =   'Not connected'
         x =         -1
         y =         -1
 
-        datatable.append([sysinfo, charge, voltage, x, y, False])
+        datatable.append([sysinfo, capacity, voltage, x, y, False])
 
         connections.append(None)
         connectingthread = threading.Thread(target=connect, args=(i,), daemon=True)
