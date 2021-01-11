@@ -7,7 +7,7 @@
     "y" :   100
   }
 ```
-- listaddress.json contains ip of jetbot nodes
+- listaddress.json contains ip addresses of jetbot nodes
 ```
   {
     "id" :        "1" ,
