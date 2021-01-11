@@ -105,22 +105,25 @@ class ListRobots(QWidget):
         id.setFixedWidth(20)
 
         osInf = QLabel("")
-        osInf.setFixedWidth(100)
+        osInf.setFixedWidth(80)
 
         power = QProgressBar()
         power.setFixedWidth(100)
 
         U = QLabel(str(20))
+        U.setFixedWidth(50)
 
         motionPermissionButton = QPushButton('Разрешить движение')
         motionPermissionButton.clicked.connect(self.motionPermissionClick)
         motionPermissionButton.setFixedWidth(120)
         motionPermissionButton.index = i
+        motionPermissionButton.setEnabled(False)
 
         emergencyStopButton = QPushButton('Аварийная остановка')
         emergencyStopButton.clicked.connect(self.emergencyStopClick)
         emergencyStopButton.setFixedWidth(120)
         emergencyStopButton.index = i
+        emergencyStopButton.setEnabled(False)
 
         hbox.addWidget(id)                         # 0
         hbox.addWidget(osInf)                      # 1
@@ -133,30 +136,31 @@ class ListRobots(QWidget):
 
     def motionPermissionClick(self):
         sender = self.sender()
-        print(sender.index)
+
         if sender.text() == "Разрешить движение":
             sender.setText("Запретить движение")
-            statetable[sender.index][0] = "Льзя"
+            sendCommand(sender.index, 'move')
+            datatable[sender.index][5] = True
         else:
             sender.setText("Разрешить движение")
-            statetable[sender.index][0] = "Незя"
-        
-        # print(sender.parent().layout().itemAt(1).widget().text())
+            sendCommand(sender.index, 'dont')
+            datatable[sender.index][5] = False
+
     def emergencyStopClick(self):
         sender = self.sender()
-        statetable[sender.index][1] = 0
+        sendCommand(sender.index, 'stop')
         
     def setText(self, column, row, text):
-        myLayout = self.layout()
-        rowLayout = myLayout.itemAt(row).layout()
-        myWidget = rowLayout.itemAt(column).widget()
-        myWidget.setText(text)
+        self.getWidget(column, row).setText(text)
 
     def setValue(self, column, row, value):
+        self.getWidget(column,row).setValue(value)
+
+    def getWidget(self, column, row):
         myLayout = self.layout()
         rowLayout = myLayout.itemAt(row).layout()
         myWidget = rowLayout.itemAt(column).widget()
-        myWidget.setValue(value)
+        return myWidget
         
 
 class Application(QWidget):
@@ -176,16 +180,11 @@ class Application(QWidget):
             self.lr.setText(1, index, sysinfo)
             charge = data[1]
             self.lr.setValue(2, index, charge)
-            voltage = ('0' if data[2] < 10 else '') + str(data[2]) + ' В'
+            voltage = ('0' if data[2] < 10 else '') + ("%.2f" % data[2]) + ' В'
             self.lr.setText(3, index, voltage)
 
             x, y = data[3], data[4]
             self.mp.setCrdRobot(index, x, y)
-
-            if data[5]=="Льзя":
-                self.lr.setText(4, index, "Запретить движение")
-            else:
-                self.lr.setText(4, index, "Разрешить движение")
 
     def initUI(self):
         self.setGeometry(100, 100, 300, 220)
@@ -197,7 +196,7 @@ class Application(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidget(self.lr)
-        scroll.setFixedWidth(550)
+        scroll.setFixedWidth(600)
         scroll.move(0, 0)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -217,7 +216,7 @@ class Application(QWidget):
         self.setLayout(hbox)
 
         # настройка размеров окна
-        self.setMinimumWidth(1100)
+        self.setMinimumWidth(1200)
         self.setMinimumHeight(550)
 
 
@@ -231,6 +230,8 @@ def connect(i):
         try:
             sock.connect(serverIP)
             connections[i] = sock
+            ex.lr.getWidget(4, i).setEnabled(True)
+            ex.lr.getWidget(5, i).setEnabled(True)
             break
 
         except TimeoutError as e:
@@ -240,7 +241,28 @@ def connect(i):
         except OSError as e:
             #print(serverIP[0] + ': ' + e.strerror)
             continue
-        
+
+
+def disconnect(i):
+    # сбрасываем данные
+    connections[i].close()
+    connections[i] = None
+    datatable[i] = ['Not connected', 0, 0, -1, -1, False]
+    ex.lr.getWidget(4, i).setEnabled(False)
+    ex.lr.setText(4, i, 'Разрешить движение')
+    ex.lr.getWidget(5, i).setEnabled(False)
+
+    # пытаемся переподключиться
+    threading.Thread(target=connect, args=(i,), daemon=True).start()
+
+
+def sendCommand(i, com):
+    try:
+        connections[i].send(com.encode())
+    except Exception as e:
+        print(addr[i] + ': ' + e.strerror)
+        disconnect(i)
+
 
 def requestData():
     request = 'hello'
@@ -253,10 +275,6 @@ def requestData():
                     # отправляем команды
                     connections[i].send(request.encode())
 
-                    data = statetable[i][0] + ', ' + str(statetable[i][1])
-                    statetable[i][1] = 1
-                    connections[i].send(data.encode())
-
                     # получаем ответ
                     data = connections[i].recv(1024)
                     s = data.decode()
@@ -265,86 +283,51 @@ def requestData():
 
                     # парсим полученную строку
                     t = s.split(', ')
-                    sysinfo =   t[0]
-                    charge =    int(t[1])
-                    voltage =   int(t[2])
-                    x =         int(t[3])
-                    y =         int(t[4])
-                    mPermis =   t[5]
+                    if len(t) == 5: 
+                        sysinfo =   t[0]
+                        charge =    int(t[1])
+                        voltage =   float(t[2])
+                        x =         float(t[3])
+                        y =         float(t[4])
 
-                    # сохраняем данные
-                    datatable[i] = [sysinfo, charge, voltage, x, y, mPermis]
-                except ConnectionResetError as e:
+                        # сохраняем данные
+                        datatable[i] = [sysinfo, charge, voltage, x, y, datatable[i][5]]
+
+                except Exception as e:
                     print(addr[i] + ': ' + e.strerror)
-                    
-                    # сбрасываем данные
-                    connections[i].close()
-                    connections[i] = None
-                    statetable[i] = ['Not connected', 0, 0, -1, -1]
-
-                    # пытаемся переподключиться
-                    threading.Thread(target=connect, args=(i,), daemon=True).start()
+                    disconnect(i)
                     continue
+
         time.sleep(1)
 
 if __name__ == '__main__':
     datatable =     []
     connections =   []
-    statetable =    []
     addr =          []
+
     with open('listaddress.json', 'r', encoding='utf-8') as f: #открыли файл с данными
         listBot = json.load(f)
         for text in listBot["Bot"]:
-            # print("id = " + str(text['id']) + "address = " + str(text['address']))
             addr.append(text['address'])
-    # addr = ['0.0.0.1',
-    #         '0.0.0.2',
-    #         '0.0.0.3',
-    #         '0.0.0.4',
-    #         '0.0.0.5',
-    #         '0.0.0.6',
-    #         '192.168.43.4',
-    #         '0.0.0.8',
-    #         '0.0.0.9',
-    #         '0.0.0.10',
-    #         '0.0.0.11',
-    #         '0.0.0.12',
-    #         '0.0.0.13',
-    #         '0.0.0.14',
-    #         '0.0.0.15',
-    #         '0.0.0.16',
-    #         '0.0.0.17',
-    #         '0.0.0.18',
-    #         '0.0.0.19',
-    #         '0.0.0.20',
-    #         '0.0.0.21',
-    #         '0.0.0.22',
-    #         '0.0.0.23',
-    #         '0.0.0.24',
-    #         '0.0.0.25',
-    #         '0.0.0.26',
-    #         '0.0.0.27',
-    #         '0.0.0.28',
-    #         '0.0.0.29',
-    #         '0.0.0.30']
 
     for i in range(30):
-        charge = 0
-        voltage = 0
-        sysinfo = 'Not connected'
-        x = -1
-        y = -1
-        mPermis = "Льзя"
-        datatable.append([sysinfo, charge, voltage, x, y, mPermis])
+        charge =    0
+        voltage =   0
+        sysinfo =   'Not connected'
+        x =         -1
+        y =         -1
+
+        datatable.append([sysinfo, charge, voltage, x, y, False])
+
         connections.append(None)
-        statetable.append(["Разрешить движение",1])
         connectingthread = threading.Thread(target=connect, args=(i,), daemon=True)
         connectingthread.start()
-
-    sendingthread = threading.Thread(target=requestData, daemon=True)
-    sendingthread.start()
 
     app = QApplication(sys.argv)
     ex = Application()
     ex.show()
+
+    sendingthread = threading.Thread(target=requestData, daemon=True)
+    sendingthread.start()
+
     sys.exit(app.exec_())
