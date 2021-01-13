@@ -99,7 +99,7 @@ if __name__ == '__main__':
     powerOnFlag = True
 
     sock = socket.socket()
-    sock.bind(('192.168.1.8', 9090))
+    sock.bind(('192.168.2.180', 9090))
     x = 0
     y = 0
 
