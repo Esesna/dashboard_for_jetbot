@@ -42,14 +42,14 @@ def respond(conn, addr):
                 print('ответ: ' + response)
             
             if 'move' in s:
-                motionEnable = True
+                motionEnabledFlag = True
 
             if 'dont' in s:
-                motionEnable = False
+                motionEnabledFlag = False
 
             if 'stop' in s:
-                motionEnable = False
-                powerOn = False
+                motionEnabledFlag = False
+                powerOnFlag = False
 
         except Exception as e:
             print(e)
@@ -78,18 +78,19 @@ def listener():
     rospy.spin()
 
 def talker():
-    pub = rospy.Publisher(name='motion', data_class=Bool, queue_size=10)
+    motionEnabledPublisher = rospy.Publisher(name='motionEnabled', data_class=Bool, queue_size=10)
+    powerOnPublisher = rospy.Publisher(name='powerOn', data_class=Bool, queue_size=10)
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
-        pub.publish(motionEnable, powerOn)
-
+        motionEnabledPublisher.publish(motionEnabledFlag)
+        powerOnPublisher.publish(powerOnFlag)
 
 if __name__ == '__main__':
     connections = []
     sysinfo = platform.platform()
 
-    motionEnable = False
-    powerOn = True
+    motionEnabledFlag = False
+    powerOnFlag = True
 
     sock = socket.socket()
     sock.bind(('192.168.1.68', 9090))
