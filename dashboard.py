@@ -105,7 +105,7 @@ class ListRobots(QWidget):
         id.setFixedWidth(20)
 
         osInf = QLabel("")
-        osInf.setFixedWidth(80)
+        osInf.setFixedWidth(120)
 
         power = QProgressBar()
         power.setFixedWidth(100)
@@ -115,13 +115,14 @@ class ListRobots(QWidget):
 
         motionPermissionButton = QPushButton('Разрешить движение')
         motionPermissionButton.clicked.connect(self.motionPermissionClick)
-        motionPermissionButton.setFixedWidth(120)
+        print(motionPermissionButton.baseSize())
+        # motionPermissionButton.setFixedWidth(120)
         motionPermissionButton.index = i
         motionPermissionButton.setEnabled(False)
 
         emergencyStopButton = QPushButton('Аварийная остановка')
         emergencyStopButton.clicked.connect(self.emergencyStopClick)
-        emergencyStopButton.setFixedWidth(120)
+        # emergencyStopButton.setFixedWidth(120)
         emergencyStopButton.index = i
         emergencyStopButton.setEnabled(False)
 
@@ -196,7 +197,7 @@ class Application(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidget(self.lr)
-        scroll.setFixedWidth(600)
+        scroll.setFixedWidth(640)
         scroll.move(0, 0)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
