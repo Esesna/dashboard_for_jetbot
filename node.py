@@ -9,6 +9,7 @@ import platform
 import rospy
 import subprocess
 from std_msgs.msg import *
+import psutil
 
 def respond(conn, addr):
     while 1:
@@ -20,6 +21,7 @@ def respond(conn, addr):
 
             if 'hello' in s:
                 # заряд и напряжение батареи
+                '''
                 bashCommand = "cat /sys/class/power_supply/BAT0/uevent"
                 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
                 output, error = process.communicate()
@@ -31,6 +33,10 @@ def respond(conn, addr):
                         voltage = int(line.split('=')[1]) / float(1000000)
                     elif "POWER_SUPPLY_CAPACITY=" in line:
                         capacity = int(line.split('=')[1])
+                        '''
+                
+                voltage = psutil.sensors_battery()[0]
+                capacity = 0
 
                 response = (sysinfo + ', ' +
                             str(capacity) + ', ' +
@@ -93,7 +99,7 @@ if __name__ == '__main__':
     powerOnFlag = True
 
     sock = socket.socket()
-    sock.bind(('192.168.1.68', 9090))
+    sock.bind(('192.168.1.8', 9090))
     x = 0
     y = 0
 
