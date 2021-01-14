@@ -9,7 +9,9 @@ import platform
 import rospy
 import subprocess
 from std_msgs.msg import *
-import psutil
+import sys
+sys.path.insert(0, '/home/jetbot/jetbot/jetbot')
+from ads1115 import *
 
 def respond(conn, addr):
     while 1:
@@ -21,22 +23,9 @@ def respond(conn, addr):
 
             if 'hello' in s:
                 # заряд и напряжение батареи
-                '''
-                bashCommand = "cat /sys/class/power_supply/BAT0/uevent"
-                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-                output, error = process.communicate()
-                voltage = 0
-                capacity = 0
-                lines = output.split('\n')
-                for line in lines:
-                    if "POWER_SUPPLY_VOLTAGE_NOW=" in line:
-                        voltage = int(line.split('=')[1]) / float(1000000)
-                    elif "POWER_SUPPLY_CAPACITY=" in line:
-                        capacity = int(line.split('=')[1])
-                        '''
                 
-                voltage = psutil.sensors_battery()[0]
-                capacity = 0
+                voltage = ADS1115().readVoltage(4)/1000.0
+                capacity = (voltage - 7.8)/(12.6-7.8)*100
 
                 response = (sysinfo + ', ' +
                             str(capacity) + ', ' +
@@ -49,6 +38,7 @@ def respond(conn, addr):
             
             if 'move' in s:
                 motionEnabledFlag = True
+		powerOnFlag = True
 
             if 'dont' in s:
                 motionEnabledFlag = False
