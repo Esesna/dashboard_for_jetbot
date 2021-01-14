@@ -21,11 +21,17 @@ def respond(conn, addr):
             
             print('получено ' + s + ' от ' + addr[0])
 
+	    if s == '':
+		conn.close()
+		break
+
             if 'hello' in s:
                 # заряд и напряжение батареи
                 
                 voltage = ADS1115().readVoltage(4)/1000.0
-                capacity = (voltage - 7.8)/(12.6-7.8)*100
+                c = (voltage - 7.8)/(12.6-7.8)
+		#capacity = (3*c*c-2*c*c*c)*100 # sigmoid?
+		capacity = c * 100 # linear
 
                 response = (sysinfo + ', ' +
                             str(capacity) + ', ' +
