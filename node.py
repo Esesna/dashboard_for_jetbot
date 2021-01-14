@@ -9,6 +9,9 @@ import platform
 import rospy
 import subprocess
 from std_msgs.msg import *
+import sys
+sys.path.insert(0, '/home/jetbot/jetbot/jetbot')
+from ads1115 import *
 
 def respond(conn, addr):
     while 1:
@@ -18,19 +21,17 @@ def respond(conn, addr):
             
             print('получено ' + s + ' от ' + addr[0])
 
+	    if s == '':
+		conn.close()
+		break
+
             if 'hello' in s:
                 # заряд и напряжение батареи
-                bashCommand = "cat /sys/class/power_supply/BAT0/uevent"
-                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-                output, error = process.communicate()
-                voltage = 0
-                capacity = 0
-                lines = output.split('\n')
-                for line in lines:
-                    if "POWER_SUPPLY_VOLTAGE_NOW=" in line:
-                        voltage = int(line.split('=')[1]) / float(1000000)
-                    elif "POWER_SUPPLY_CAPACITY=" in line:
-                        capacity = int(line.split('=')[1])
+                
+                voltage = ADS1115().readVoltage(4)/1000.0
+                c = (voltage - 7.8)/(12.6-7.8)
+		#capacity = (3*c*c-2*c*c*c)*100 # sigmoid?
+		capacity = c * 100 # linear
 
                 response = (sysinfo + ', ' +
                             str(capacity) + ', ' +
@@ -42,14 +43,15 @@ def respond(conn, addr):
                 print('ответ: ' + response)
             
             if 'move' in s:
-                motionEnable = True
+                motionEnabledFlag = True
+		powerOnFlag = True
 
             if 'dont' in s:
-                motionEnable = False
+                motionEnabledFlag = False
 
             if 'stop' in s:
-                motionEnable = False
-                powerOn = False
+                motionEnabledFlag = False
+                powerOnFlag = False
 
         except Exception as e:
             print(e)
@@ -78,21 +80,22 @@ def listener():
     rospy.spin()
 
 def talker():
-    pub = rospy.Publisher(name='motion', data_class=Bool, queue_size=10)
+    motionEnabledPublisher = rospy.Publisher(name='motionEnabled', data_class=Bool, queue_size=10)
+    powerOnPublisher = rospy.Publisher(name='powerOn', data_class=Bool, queue_size=10)
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
-        pub.publish(motionEnable, powerOn)
-
+        motionEnabledPublisher.publish(motionEnabledFlag)
+        powerOnPublisher.publish(powerOnFlag)
 
 if __name__ == '__main__':
     connections = []
     sysinfo = platform.platform()
 
-    motionEnable = False
-    powerOn = True
+    motionEnabledFlag = False
+    powerOnFlag = True
 
     sock = socket.socket()
-    sock.bind(('192.168.1.68', 9090))
+    sock.bind(('192.168.2.180', 9090))
     x = 0
     y = 0
 

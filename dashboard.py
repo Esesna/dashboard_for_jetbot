@@ -105,7 +105,7 @@ class ListRobots(QWidget):
         id.setFixedWidth(20)
 
         osInf = QLabel("")
-        osInf.setFixedWidth(80)
+        osInf.setFixedWidth(120)
 
         power = QProgressBar()
         power.setFixedWidth(100)
@@ -115,13 +115,13 @@ class ListRobots(QWidget):
 
         motionPermissionButton = QPushButton('Разрешить движение')
         motionPermissionButton.clicked.connect(self.motionPermissionClick)
-        motionPermissionButton.setFixedWidth(120)
+        motionPermissionButton.setFixedWidth(220)
         motionPermissionButton.index = i
         motionPermissionButton.setEnabled(False)
 
         emergencyStopButton = QPushButton('Аварийная остановка')
         emergencyStopButton.clicked.connect(self.emergencyStopClick)
-        emergencyStopButton.setFixedWidth(120)
+        emergencyStopButton.setFixedWidth(220)
         emergencyStopButton.index = i
         emergencyStopButton.setEnabled(False)
 
@@ -196,7 +196,7 @@ class Application(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidget(self.lr)
-        scroll.setFixedWidth(600)
+        scroll.setFixedWidth(800)
         scroll.move(0, 0)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -216,7 +216,7 @@ class Application(QWidget):
         self.setLayout(hbox)
 
         # настройка размеров окна
-        self.setMinimumWidth(1200)
+        self.setMinimumWidth(1350)
         self.setMinimumHeight(550)
 
 
@@ -285,7 +285,7 @@ def requestData():
                     t = s.split(', ')
                     if len(t) == 5: 
                         sysinfo =   t[0]
-                        capacity =    int(t[1])
+                        capacity =  float(t[1])
                         voltage =   float(t[2])
                         x =         float(t[3])
                         y =         float(t[4])
