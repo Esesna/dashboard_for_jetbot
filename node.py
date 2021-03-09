@@ -14,6 +14,9 @@ sys.path.insert(0, '/home/jetbot/jetbot/jetbot')
 from ads1115 import *
 
 def respond(conn, addr):
+    global voltage
+    global capacity
+
     while 1:
         try:
             data = conn.recv(1024)
@@ -21,18 +24,11 @@ def respond(conn, addr):
             
             print('получено ' + s + ' от ' + addr[0])
 
-	    if s == '':
-		conn.close()
-		break
+            if s == '':
+                conn.close()
+                break
 
             if 'hello' in s:
-                # заряд и напряжение батареи
-                
-                voltage = ADS1115().readVoltage(4)/1000.0
-                c = (voltage - 7.8)/(12.6-7.8)
-		#capacity = (3*c*c-2*c*c*c)*100 # sigmoid?
-		capacity = c * 100 # linear
-
                 response = (sysinfo + ', ' +
                             str(capacity) + ', ' +
                             str(voltage) + ', ' +
@@ -41,10 +37,10 @@ def respond(conn, addr):
 
                 conn.send(response)
                 print('ответ: ' + response)
-            
+                
             if 'move' in s:
                 motionEnabledFlag = True
-		powerOnFlag = True
+                powerOnFlag = True
 
             if 'dont' in s:
                 motionEnabledFlag = False
@@ -87,7 +83,33 @@ def talker():
         motionEnabledPublisher.publish(motionEnabledFlag)
         powerOnPublisher.publish(powerOnFlag)
 
+def getVoltage():
+    global voltage
+    global capacity
+
+    ads =  ADS1115()
+
+    while(1):
+        try:
+            voltage = ads.readVoltage(4)/1000.0
+            c = (voltage - 7.8)/(12.6-7.8)
+            #capacity = (3*c*c-2*c*c*c)*100 # sigmoid?
+            capacity = c * 100 # linear
+            print(' ' + voltage + ' ' + capacity)
+
+            time.sleep(60)
+        except Exception as e:
+            print(e)
+            time.sleep(10)
+
+
+
 if __name__ == '__main__':
+    voltage = 12.6
+    capacity = 100
+
+    threading.Thread(target=getVoltage).start()
+
     connections = []
     sysinfo = platform.platform()
 
@@ -95,7 +117,7 @@ if __name__ == '__main__':
     powerOnFlag = True
 
     sock = socket.socket()
-    sock.bind(('192.168.2.180', 9090))
+    sock.bind(('', 9090))
     x = 0
     y = 0
 
